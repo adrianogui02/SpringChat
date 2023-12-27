@@ -1,7 +1,7 @@
 
-# Talk-A-Tive
+# SpringChat
 
-Talk-a-tive is a Full Stack Chatting App.
+SpringChat is a Full Stack Chatting App.
 Uses Socket.io for real time communication and stores user details in encrypted format in Mongo DB Database.
 ## Tech Stack
 
@@ -11,11 +11,6 @@ Uses Socket.io for real time communication and stores user details in encrypted 
 
 **Database:** Mongo DB
   
-## Demo
-
-https://talk-a-tive.herokuapp.com/
-
-![](https://github.com/piyush-eon/mern-chat-app/blob/master/screenshots/group%20%2B%20notif.PNG)
 ## Run Locally
 
 Clone the project
@@ -27,7 +22,7 @@ Clone the project
 Go to the project directory
 
 ```bash
-  cd mern-chat-app
+  cd SpringChat
 ```
 
 Install dependencies
@@ -74,8 +69,6 @@ Start the Client
 ![](https://github.com/piyush-eon/mern-chat-app/blob/master/screenshots/add%20rem.PNG)
 ### View Other user Profile
 ![](https://github.com/piyush-eon/mern-chat-app/blob/master/screenshots/profile.PNG)
-## Made By
 
-- [@Piyush-eon](https://github.com/piyush-eon)
 
   
