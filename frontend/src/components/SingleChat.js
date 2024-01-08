@@ -11,12 +11,14 @@ import ProfileModal from "./miscellaneous/ProfileModal";
 import ScrollableChat from "./ScrollableChat";
 import Lottie from "react-lottie";
 import animationData from "../animations/typing.json";
-
+import Cookies from 'js-cookie';
+//import Cookies from 'universal-cookie';
 import io from "socket.io-client";
 import UpdateGroupChatModal from "./miscellaneous/UpdateGroupChatModal";
 import { ChatState } from "../Context/ChatProvider";
 const ENDPOINT = "http://localhost:5000"; // "https://talk-a-tive.herokuapp.com"; -> After deployment
 var socket, selectedChatCompare;
+
 
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const [messages, setMessages] = useState([]);
@@ -38,37 +40,62 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const { selectedChat, setSelectedChat, user, notification, setNotification } =
     ChatState();
 
-  const fetchMessages = async () => {
-    if (!selectedChat) return;
-
-    try {
-      const config = {
-        headers: {
-          Authorization: `Bearer ${user.token}`,
-        },
-      };
-
-      setLoading(true);
-
-      const { data } = await axios.get(
-        `/api/message/${selectedChat._id}`,
-        config
-      );
-      setMessages(data);
-      setLoading(false);
-
-      socket.emit("join chat", selectedChat._id);
-    } catch (error) {
-      toast({
-        title: "Error Occured!",
-        description: "Failed to Load the Messages",
-        status: "error",
-        duration: 5000,
-        isClosable: true,
-        position: "bottom",
-      });
-    }
-  };
+    const fetchMessages = async () => {
+      const NodeRSA = require('node-rsa');
+    
+      if (!selectedChat) return;
+    
+      try {
+        const config = {
+          headers: {
+            Authorization: `Bearer ${user.token}`,
+          },
+        };
+    
+        setLoading(true);
+    
+        const { data } = await axios.get(`/api/message/${selectedChat._id}`, config);
+        
+        const directkey ='-----BEGIN%20RSA%20PRIVATE%20KEY-----%0AMIIEpAIBAAKCAQEAipKu0REDpjfB8HSGz99ig0pG34lFfZi24V6L29X%2BYgwl%2BlTa%0A%2BBsE4nJFrErZvet8rH7lTY39CbSy41Jut5%2ByjIpGAY6yTyXSNgAaKN8LJbr6gq54%0Agd6sPP6MkUkFxBAGfQaBpXWVzAQjfQkyUzm39Uh%2FdalveEjNpDrSo0hoZrUizQZ8%0AGJUhwoEqbIsmyRpUQ8Z291KYf2Ow3pV9R1xNrVdIey%2Fd8eXRSinmBETr3kT7cq1l%0AYOR1d0HRhzpLF9C2rF4MaAvxkMI1%2BjXWz1Ye7vQTsstaN46eox7v9XhfPhmyC5lY%0Aen7XzyduWJjYh5dYidHBft3rKwb7JlL31HcxfwIDAQABAoIBAFkwQa40GjowZvXh%0Auicu6tP%2FyY%2F0ZTKKSSLS3IeYuwrWMNdnKCxKD6HD1M4ouu5%2FE5Zeci2xdqx5ji27%0Aj6FF%2BwBzus0jz%2BYbPKoe9Ldbn2wgZT4ZF1zXOdpkJ4sXCcwAWHy95FHfVZOjEkhW%0A0%2Fo3CwynJcpQTHuJuDm81nfbkb6QYd9%2B0%2BWWduNAZoOAgd6mKKQ9f0iM4qKgGotc%0AvuP4M%2FJYwVPWW4nzp47e1CzFat47BizrRssc6Oq9KPwJul%2BwwgEYEMBm%2BZH4RL2i%0Aos%2BPd2r6DNptC2HRD3odg05di2AAwuu%2B6hrs8Q17NKsMCi60hQBIpDp1oo%2Baldbe%0AUn5890kCgYEAzDpkNWQQVVaTFWePmBoTVm9kGDmNJBSZWxUtofwfgS5Ac6SS3zAT%0ArUt28sDSCl21ibp14LmtIiztf5B6gH7d6aJnevdJ6GJnrfEsme67S%2FPGdXO7v06%2F%0ACqW6W4PkbL8KpOavyG0ZCjsXSrnysiSZQ2zIA4CVYwZs962Hxf36ilUCgYEArbOH%0Atys3Nuxw67tpwF7OVbnJ58ySoZFqZN2W9ptDjFMe2DWKrSZ80X6jltDILxwUzDdO%0Aijpyo2kTK5TvfeyXfMOZCEhMCnlf4tXfFdb%2B6NbdMRKhO%2BL5zIWy0FikFiYcBwqr%0AruiVE0Rf2X2LQBjMvhu2ClLTlJhkjF6ReCxwyIMCgYEAgtG0du7N95wpQ0C%2FHnM1%0Ah9x6hXn4CvCW%2B10pieVyWNFDv8%2FftM%2BbCxqX6w%2FQe4tjSgICmBzX5lhZGal2jvC1%0APX8mQgI9eXnvZ%2BBg7YmauCBDM%2BEaloTeovdd1Fk77NzC%2BLY8S2p267LGTLun1qzS%0A7%2FmydWvcRT5MdqrVmeICprECgYA2gOLQ4sqMfVxhW4kvR5BO7eEgztwjvlE4HR%2FF%0AeaqUWXCQPxyogC8iPS5voEtwHMuZ2LDYRsa557qQLkeHp7lQ%2BL8IDkdt8e%2FYaWt6%0Amt%2BZh%2FIX99SHygy%2F1CPrpCS4nnSk8QA1%2FdzpEsdQo0gScLWt4VwZmSuysK68LOBQ%0AaQFqqQKBgQCPWgjef4bqQHF0A4%2Fb6nkKIj%2F%2FID6wEXIbviTAB7AZoQHQ%2FJ3h9WFU%0AwyOCmL1SaGG2I5NBpWprerwipu7xJRht8R6w9ynekDOuINudOy%2Fh8dJD3TQYnA%2BK%0AjFf8V7aZQGQlp0HTuTVISSE6eDTRZsbMCrqRmoNsi7xJJfN86STKDA%3D%3D%0A-----END%20RSA%20PRIVATE%20KEY-----'
+        // Obter a chave privada dos cookies
+        const privateKey = await Cookies.get('private_key'); // Certifique-se de usar a chave correta
+        console.log('privateKey: ' + privateKey);
+        // Função para descriptografar uma mensagem
+        const decryptMessage = (encryptedMessage, privateKey) => {
+          try {
+            const key = new NodeRSA(privateKey, 'pkcs1-private');
+            const decryptedMessage = key.decrypt(encryptedMessage, 'utf8');
+            return decryptedMessage;
+          } catch (error) {
+            console.error('Error during decryption:', error.message);
+            return null;
+          }
+        };
+        
+  
+    
+        // Descriptografar as mensagens antes de defini-las no estado
+        const decryptedMessages = data.map((message) => {
+          const decryptedContent = decryptMessage(message.content, directkey);
+          return { ...message, content: decryptedContent };
+        });
+    
+        setMessages(decryptedMessages);
+        setLoading(false);
+    
+        socket.emit('join chat', selectedChat._id);
+      } catch (error) {
+        toast({
+          title: 'Error Occurred!',
+          description: 'Failed to Load the Messages',
+          status: 'error',
+          duration: 5000,
+          isClosable: true,
+          position: 'bottom',
+        });
+      }
+    };
+    
 
   const sendMessage = async (event) => {
     if (event.key === "Enter" && newMessage) {

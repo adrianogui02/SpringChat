@@ -1,6 +1,8 @@
 const asyncHandler = require("express-async-handler");
 const User = require("../models/userModel");
 const generateToken = require("../config/generateToken");
+const NodeRSA = require('node-rsa');
+const cookie = require('cookie');
 
 //@description     Get or Search all users
 //@route           GET /api/user?search=
@@ -27,7 +29,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
   if (!name || !email || !password) {
     res.status(400);
-    throw new Error("Please Enter all the Feilds");
+    throw new Error("Please Enter all the Fields");
   }
 
   const userExists = await User.findOne({ email });
@@ -37,14 +39,23 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new Error("User already exists");
   }
 
+  // Gera chaves públicas e privadas com node-rsa
+  const key = new NodeRSA({ b: 2048 });
+  const publicKey = key.exportKey('public');
+  const privateKey = key.exportKey('private');
+
   const user = await User.create({
     name,
     email,
     password,
     pic,
+    public_key: publicKey,
   });
 
   if (user) {
+    // Salva a chave privada no cookie
+    res.setHeader("Set-Cookie", cookie.serialize("private_key", privateKey,));
+
     res.status(201).json({
       _id: user._id,
       name: user.name,
@@ -58,6 +69,7 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new Error("User not found");
   }
 });
+
 
 //@description     Auth the user
 //@route           POST /api/users/login

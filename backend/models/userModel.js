@@ -17,8 +17,9 @@ const userSchema = mongoose.Schema(
       required: true,
       default: false,
     },
+    public_key: { type: "String", required: true }, // Adiciona a chave pública
   },
-  { timestaps: true }
+  { timestamps: true }
 );
 
 userSchema.methods.matchPassword = async function (enteredPassword) {
@@ -26,7 +27,7 @@ userSchema.methods.matchPassword = async function (enteredPassword) {
 };
 
 userSchema.pre("save", async function (next) {
-  if (!this.isModified) {
+  if (!this.isModified("password")) {
     next();
   }
 

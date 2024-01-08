@@ -2,6 +2,7 @@ const asyncHandler = require("express-async-handler");
 const Message = require("../models/messageModel");
 const User = require("../models/userModel");
 const Chat = require("../models/chatModel");
+const NodeRSA = require('node-rsa');
 
 //@description     Get all Messages
 //@route           GET /api/Message/:chatId
@@ -24,20 +25,25 @@ const allMessages = asyncHandler(async (req, res) => {
 const sendMessage = asyncHandler(async (req, res) => {
   const { content, chatId } = req.body;
 
-  if (!content || !chatId) {
+  if (!content || !chatId || !req.user) {
     console.log("Invalid data passed into request");
     return res.sendStatus(400);
   }
 
-  var newMessage = {
+  // Obtem a chave pública do destinatário (usuário no mesmo chat)
+  const recipientPublicKey = req.user.public_key;
+
+  // Criptografa a mensagem usando a chave pública do destinatário
+  const encryptedContent = await encryptMessage(content, recipientPublicKey);
+
+  const newMessage = {
     sender: req.user._id,
-    content: content,
+    content: encryptedContent,
     chat: chatId,
   };
 
   try {
-    var message = await Message.create(newMessage);
-
+    let message = await Message.create(newMessage);
     message = await message.populate("sender", "name pic").execPopulate();
     message = await message.populate("chat").execPopulate();
     message = await User.populate(message, {
@@ -45,7 +51,7 @@ const sendMessage = asyncHandler(async (req, res) => {
       select: "name pic email",
     });
 
-    await Chat.findByIdAndUpdate(req.body.chatId, { latestMessage: message });
+    await Chat.findByIdAndUpdate(chatId, { latestMessage: message });
 
     res.json(message);
   } catch (error) {
@@ -53,5 +59,25 @@ const sendMessage = asyncHandler(async (req, res) => {
     throw new Error(error.message);
   }
 });
+
+const encryptMessage = async (message, publicKey) => {
+  console.log("Encrypt");
+  try {
+    // Cria uma instância da chave pública
+    const key = new NodeRSA(publicKey, 'pkcs8-public');
+
+    // Criptografa a mensagem
+    const encryptedContent = key.encrypt(message, 'base64');
+    console.log(encryptedContent);
+    return encryptedContent;
+  } catch (error) {
+    console.error("Erro na criptografia:", error);
+    throw error;
+  }
+};
+
+
+
+
 
 module.exports = { allMessages, sendMessage };
