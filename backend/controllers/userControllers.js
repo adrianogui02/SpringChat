@@ -1,7 +1,7 @@
 const asyncHandler = require("express-async-handler");
 const User = require("../models/userModel");
 const generateToken = require("../config/generateToken");
-const NodeRSA = require('node-rsa');
+const forge = require('node-forge');
 const cookie = require('cookie');
 
 //@description     Get or Search all users
@@ -39,10 +39,10 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new Error("User already exists");
   }
 
-  // Gera chaves públicas e privadas com node-rsa
-  const key = new NodeRSA({ b: 2048 });
-  const publicKey = key.exportKey('public');
-  const privateKey = key.exportKey('private');
+  // Gera chaves públicas e privadas com Forge
+  const keyPair = forge.pki.rsa.generateKeyPair({ bits: 2048 });
+  const publicKey = forge.pki.publicKeyToPem(keyPair.publicKey);
+  const privateKey = forge.pki.privateKeyToPem(keyPair.privateKey);
 
   const user = await User.create({
     name,
@@ -54,7 +54,7 @@ const registerUser = asyncHandler(async (req, res) => {
 
   if (user) {
     // Salva a chave privada no cookie
-    res.setHeader("Set-Cookie", cookie.serialize("private_key", privateKey,));
+    res.setHeader("Set-Cookie", cookie.serialize("private_key", privateKey, { httpOnly: true }));
 
     res.status(201).json({
       _id: user._id,

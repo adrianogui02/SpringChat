@@ -2,7 +2,7 @@ const asyncHandler = require("express-async-handler");
 const Message = require("../models/messageModel");
 const User = require("../models/userModel");
 const Chat = require("../models/chatModel");
-const NodeRSA = require('node-rsa');
+const forge = require("node-forge");
 
 //@description     Get all Messages
 //@route           GET /api/Message/:chatId
@@ -30,15 +30,37 @@ const sendMessage = asyncHandler(async (req, res) => {
     return res.sendStatus(400);
   }
 
-  // Obtem a chave pública do destinatário (usuário no mesmo chat)
-  const recipientPublicKey = req.user.public_key;
+  // Encontre o remetente com base no e-mail do remetente
+  const senderEmail = req.user.email;
+  const sender = chatId.users.find((user) => user.email === senderEmail);
+  console.log("Sender: " + sender.name);
 
-  // Criptografa a mensagem usando a chave pública do destinatário
+  if (!sender) {
+    console.log("Sender not found");
+    return res.sendStatus(400);
+  }
+
+  // Encontre o destinatário (outro usuário no chat)
+  const recipient = chatId.users.find((user) => user.email !== senderEmail);
+  console.log("Recipient: " + recipient.name);
+  console.log("Recipient RSA PUBLIC KEY: " + recipient.public_key);
+
+  if (!recipient || !recipient.public_key) {
+    console.log("Recipient not found or missing public key");
+    return res.sendStatus(400);
+  }
+
+  // Obtenha a chave pública do destinatário
+  const recipientPublicKey = recipient.public_key;
+
+  console.log(content);
+
   const encryptedContent = await encryptMessage(content, recipientPublicKey);
+  console.log(encryptedContent);
 
   const newMessage = {
-    sender: req.user._id,
-    content: encryptedContent,
+    sender: sender._id, // Use o ID do remetente
+    content: content,
     chat: chatId,
   };
 
@@ -61,23 +83,14 @@ const sendMessage = asyncHandler(async (req, res) => {
 });
 
 const encryptMessage = async (message, publicKey) => {
-  console.log("Encrypt");
   try {
-    // Cria uma instância da chave pública
-    const key = new NodeRSA(publicKey, 'pkcs8-public');
-
-    // Criptografa a mensagem
-    const encryptedContent = key.encrypt(message, 'base64');
-    console.log(encryptedContent);
-    return encryptedContent;
+    const publicKeyObj = forge.pki.publicKeyFromPem(publicKey);
+    const encryptedContent = publicKeyObj.encrypt(message, "RSA-OAEP");
+    return forge.util.encode64(encryptedContent);
   } catch (error) {
     console.error("Erro na criptografia:", error);
     throw error;
   }
 };
-
-
-
-
 
 module.exports = { allMessages, sendMessage };

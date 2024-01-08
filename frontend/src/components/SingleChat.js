@@ -12,13 +12,13 @@ import ScrollableChat from "./ScrollableChat";
 import Lottie from "react-lottie";
 import animationData from "../animations/typing.json";
 import Cookies from 'js-cookie';
-//import Cookies from 'universal-cookie';
+
 import io from "socket.io-client";
 import UpdateGroupChatModal from "./miscellaneous/UpdateGroupChatModal";
 import { ChatState } from "../Context/ChatProvider";
 const ENDPOINT = "http://localhost:5000"; // "https://talk-a-tive.herokuapp.com"; -> After deployment
 var socket, selectedChatCompare;
-
+const forge = require('node-forge');
 
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const [messages, setMessages] = useState([]);
@@ -41,7 +41,6 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
     ChatState();
 
     const fetchMessages = async () => {
-      const NodeRSA = require('node-rsa');
     
       if (!selectedChat) return;
     
@@ -55,16 +54,18 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
         setLoading(true);
     
         const { data } = await axios.get(`/api/message/${selectedChat._id}`, config);
+        console.log(data)
         
-        const directkey ='-----BEGIN%20RSA%20PRIVATE%20KEY-----%0AMIIEpAIBAAKCAQEAipKu0REDpjfB8HSGz99ig0pG34lFfZi24V6L29X%2BYgwl%2BlTa%0A%2BBsE4nJFrErZvet8rH7lTY39CbSy41Jut5%2ByjIpGAY6yTyXSNgAaKN8LJbr6gq54%0Agd6sPP6MkUkFxBAGfQaBpXWVzAQjfQkyUzm39Uh%2FdalveEjNpDrSo0hoZrUizQZ8%0AGJUhwoEqbIsmyRpUQ8Z291KYf2Ow3pV9R1xNrVdIey%2Fd8eXRSinmBETr3kT7cq1l%0AYOR1d0HRhzpLF9C2rF4MaAvxkMI1%2BjXWz1Ye7vQTsstaN46eox7v9XhfPhmyC5lY%0Aen7XzyduWJjYh5dYidHBft3rKwb7JlL31HcxfwIDAQABAoIBAFkwQa40GjowZvXh%0Auicu6tP%2FyY%2F0ZTKKSSLS3IeYuwrWMNdnKCxKD6HD1M4ouu5%2FE5Zeci2xdqx5ji27%0Aj6FF%2BwBzus0jz%2BYbPKoe9Ldbn2wgZT4ZF1zXOdpkJ4sXCcwAWHy95FHfVZOjEkhW%0A0%2Fo3CwynJcpQTHuJuDm81nfbkb6QYd9%2B0%2BWWduNAZoOAgd6mKKQ9f0iM4qKgGotc%0AvuP4M%2FJYwVPWW4nzp47e1CzFat47BizrRssc6Oq9KPwJul%2BwwgEYEMBm%2BZH4RL2i%0Aos%2BPd2r6DNptC2HRD3odg05di2AAwuu%2B6hrs8Q17NKsMCi60hQBIpDp1oo%2Baldbe%0AUn5890kCgYEAzDpkNWQQVVaTFWePmBoTVm9kGDmNJBSZWxUtofwfgS5Ac6SS3zAT%0ArUt28sDSCl21ibp14LmtIiztf5B6gH7d6aJnevdJ6GJnrfEsme67S%2FPGdXO7v06%2F%0ACqW6W4PkbL8KpOavyG0ZCjsXSrnysiSZQ2zIA4CVYwZs962Hxf36ilUCgYEArbOH%0Atys3Nuxw67tpwF7OVbnJ58ySoZFqZN2W9ptDjFMe2DWKrSZ80X6jltDILxwUzDdO%0Aijpyo2kTK5TvfeyXfMOZCEhMCnlf4tXfFdb%2B6NbdMRKhO%2BL5zIWy0FikFiYcBwqr%0AruiVE0Rf2X2LQBjMvhu2ClLTlJhkjF6ReCxwyIMCgYEAgtG0du7N95wpQ0C%2FHnM1%0Ah9x6hXn4CvCW%2B10pieVyWNFDv8%2FftM%2BbCxqX6w%2FQe4tjSgICmBzX5lhZGal2jvC1%0APX8mQgI9eXnvZ%2BBg7YmauCBDM%2BEaloTeovdd1Fk77NzC%2BLY8S2p267LGTLun1qzS%0A7%2FmydWvcRT5MdqrVmeICprECgYA2gOLQ4sqMfVxhW4kvR5BO7eEgztwjvlE4HR%2FF%0AeaqUWXCQPxyogC8iPS5voEtwHMuZ2LDYRsa557qQLkeHp7lQ%2BL8IDkdt8e%2FYaWt6%0Amt%2BZh%2FIX99SHygy%2F1CPrpCS4nnSk8QA1%2FdzpEsdQo0gScLWt4VwZmSuysK68LOBQ%0AaQFqqQKBgQCPWgjef4bqQHF0A4%2Fb6nkKIj%2F%2FID6wEXIbviTAB7AZoQHQ%2FJ3h9WFU%0AwyOCmL1SaGG2I5NBpWprerwipu7xJRht8R6w9ynekDOuINudOy%2Fh8dJD3TQYnA%2BK%0AjFf8V7aZQGQlp0HTuTVISSE6eDTRZsbMCrqRmoNsi7xJJfN86STKDA%3D%3D%0A-----END%20RSA%20PRIVATE%20KEY-----'
+        const directkey ='-----BEGIN RSA PRIVATE KEY----- MIIEowIBAAKCAQEAuEyV2bGMYI7u/U/5ciM6M0QEnEfRxeJ4F1ffisE5bjziO4UZ TbFw2lT3Cq2ybFjUf0S+nyOXTIVEuaiTUd3oMc8e+bQ/lINScu6VX5rlrLy9uBds ksrYlgc6o+1B+CJ2ra0DSvxzfPhkb9bFkFLWru0LkkhKcttbLFeg1xyvzMKrLqS2 6PT+VmcjL1e2Nw45vnEpQHyHNVml2Mhrvp1z11g0ZA8257+84zyifi8+iYffgSlb 688vlkHcmopjrh7hElDaOS277KeLnhezEtL6alTXDUhlH7i0+BPR8DjR8MgPNQVD MnhqvbBV/q3Tg0kdN7FbRKJf95ypn3hdg7K8bwIDAQABAoIBAAWWGLK1DYa9vmPC QVLi23hDVwpvqN2hLDe066s2iSmcwdTBB4/R0ZRkn+pccnyTQrmq2UZUm1jv7zHb eL+yBMBBwXQbMRQs2Npv/eocdVrDi9KhLyLR8De392CRp/6/+K3yARgMR+nhU5YK QgnKYQSDXebstwj9OinBbDgo//EqZhnwBmCzEHgnZ4T+DS8+5ZNkp9OpmrGoqq/B LFnB+x548j4/y95QPrfLQNA8WaDwu8d8adw+qPV+9sFI1ZbjVm+/E0Z+5ppWN0JR yp6R07RLOp05bd3Cy6MnHlrhTWtcNvOXlxoDqj5s3b+Whw4MsNO6qW41+aQY0ATP P3NWkTkCgYEA/FvAAs8kFbNuuh2PuDd79JTq9xqs5ZgSLpYlm03d+FzxGUbcBrfd Py+5KAiZURBHKzpobfOKNFt2k8KDKaaAXe7+TVq5BHK9MjymmmI+9zMVmBxdhwnf u33nDOI7CClv3hGOGW6DUrRC2zn435/8Iigu4e5CMUEd0iSPujJQ27cCgYEAuvVq Cw8gl86b7IewIOI+NKEmas84KcvBNBCWjtrD4ToWmVEhIZxQabisDvu31n9T0CX+ 749uYwOl0MUCJw6m6VIqRo+xmFLTp9uambTWeV+4hjZO7F2K9Pk1JTEWjptA9Ie4 iiWKvjPwxoy95AbmzYPx7QO3xMXFxQk2DiPTFQkCgYB+t2N3BaRM8UiMVAOysMmh SpWhdteSggW/Ns2zaionaCP4WUhqZzDFZaVHoOm7dr0Fy9JcQ4oGOFcWYvmRlHWo tTUkioWU4jh2XVYa93I+lnwlYTjlcePSNaorIf4aXxQ5If+EbaWrhbB8fGOnhqII VL0V3ZmHOfdLaehxyooniQKBgG/d1JvVa10qZSX8cqjadvoqyr/ySdrIbkxm+I91 2urzRP5sCvT/gSYhN+KnP3L7MP1FHuvc2OIqFpd6qjUQkVLetSkPZeaM+NRhlHoQ OJzbZ5/28vZ/alv2mZQtcR/XSeCHLSaMHB5/GbzUDfNZJdUm9CUrqlP1OscRIeUI Do9xAoGBAMqvrhaOjB5gHdFSxD4v9XfA3JGdgA7DxELx1OgyuINxupI0j3Iv9GiY qudT18IelmeGqz7MfnB29+KV5G9LkgCcyhSY5Myp2/iPa5l/FizS3MPaw6VxQQd5 1cxrtF+VqL5ay7Qvjg2D3gH2LSces7o+rqtIi1s0g8+0tBThA8ld -----END RSA PRIVATE KEY-----'
         // Obter a chave privada dos cookies
-        const privateKey = await Cookies.get('private_key'); // Certifique-se de usar a chave correta
+        const privateKey = Cookies.get('private_key'); // Certifique-se de usar a chave correta
         console.log('privateKey: ' + privateKey);
         // Função para descriptografar uma mensagem
         const decryptMessage = (encryptedMessage, privateKey) => {
           try {
-            const key = new NodeRSA(privateKey, 'pkcs1-private');
-            const decryptedMessage = key.decrypt(encryptedMessage, 'utf8');
+            const privateKeyObj = forge.pki.privateKeyFromPem(privateKey);
+            const decodedContent = forge.util.decode64(encryptedMessage);
+            const decryptedMessage = privateKeyObj.decrypt(decodedContent, 'RSA-OAEP');
             return decryptedMessage;
           } catch (error) {
             console.error('Error during decryption:', error.message);
@@ -72,15 +73,13 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
           }
         };
         
-  
-    
         // Descriptografar as mensagens antes de defini-las no estado
         const decryptedMessages = data.map((message) => {
-          const decryptedContent = decryptMessage(message.content, directkey);
+          const decryptedContent = decryptMessage(message.content, privateKey);
           return { ...message, content: decryptedContent };
         });
     
-        setMessages(decryptedMessages);
+        setMessages(data);
         setLoading(false);
     
         socket.emit('join chat', selectedChat._id);

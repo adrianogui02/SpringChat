@@ -16,6 +16,7 @@
     "chat-app": "file:..",
     "framer-motion": "^4",
     "js-cookie": "^3.0.5",
+    "node-forge": "^1.3.1",
     "node-rsa": "^1.1.1",
     "react": "^17.0.2",
     "react-chips": "^0.8.0",
