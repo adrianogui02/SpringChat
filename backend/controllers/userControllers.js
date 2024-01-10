@@ -1,8 +1,8 @@
 const asyncHandler = require("express-async-handler");
 const User = require("../models/userModel");
 const generateToken = require("../config/generateToken");
-const forge = require('node-forge');
-const cookie = require('cookie');
+const forge = require("node-forge");
+const cookie = require("cookie");
 
 //@description     Get or Search all users
 //@route           GET /api/user?search=
@@ -53,9 +53,6 @@ const registerUser = asyncHandler(async (req, res) => {
   });
 
   if (user) {
-    // Salva a chave privada no cookie
-    res.setHeader("Set-Cookie", cookie.serialize("private_key", privateKey, { httpOnly: true }));
-
     res.status(201).json({
       _id: user._id,
       name: user.name,
@@ -63,13 +60,13 @@ const registerUser = asyncHandler(async (req, res) => {
       isAdmin: user.isAdmin,
       pic: user.pic,
       token: generateToken(user._id),
+      privateKey,
     });
   } else {
     res.status(400);
     throw new Error("User not found");
   }
 });
-
 
 //@description     Auth the user
 //@route           POST /api/users/login

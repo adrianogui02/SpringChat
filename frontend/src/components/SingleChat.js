@@ -11,17 +11,18 @@ import ProfileModal from "./miscellaneous/ProfileModal";
 import ScrollableChat from "./ScrollableChat";
 import Lottie from "react-lottie";
 import animationData from "../animations/typing.json";
-import Cookies from 'js-cookie';
+import Cookies from "js-cookie";
 
 import io from "socket.io-client";
 import UpdateGroupChatModal from "./miscellaneous/UpdateGroupChatModal";
 import { ChatState } from "../Context/ChatProvider";
 const ENDPOINT = "http://localhost:5000"; // "https://talk-a-tive.herokuapp.com"; -> After deployment
 var socket, selectedChatCompare;
-const forge = require('node-forge');
+const forge = require("node-forge");
 
 const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const [messages, setMessages] = useState([]);
+  const [messagesCrypted, setMessagesCrypted] = useState([]);
   const [loading, setLoading] = useState(false);
   const [newMessage, setNewMessage] = useState("");
   const [socketConnected, setSocketConnected] = useState(false);
@@ -40,65 +41,76 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
   const { selectedChat, setSelectedChat, user, notification, setNotification } =
     ChatState();
 
-    const fetchMessages = async () => {
-    
-      if (!selectedChat) return;
-    
-      try {
-        const config = {
-          headers: {
-            Authorization: `Bearer ${user.token}`,
-          },
-        };
-    
-        setLoading(true);
-    
-        const { data } = await axios.get(`/api/message/${selectedChat._id}`, config);
-        console.log(data)
-        
-        const directkey ='-----BEGIN RSA PRIVATE KEY----- MIIEowIBAAKCAQEAuEyV2bGMYI7u/U/5ciM6M0QEnEfRxeJ4F1ffisE5bjziO4UZ TbFw2lT3Cq2ybFjUf0S+nyOXTIVEuaiTUd3oMc8e+bQ/lINScu6VX5rlrLy9uBds ksrYlgc6o+1B+CJ2ra0DSvxzfPhkb9bFkFLWru0LkkhKcttbLFeg1xyvzMKrLqS2 6PT+VmcjL1e2Nw45vnEpQHyHNVml2Mhrvp1z11g0ZA8257+84zyifi8+iYffgSlb 688vlkHcmopjrh7hElDaOS277KeLnhezEtL6alTXDUhlH7i0+BPR8DjR8MgPNQVD MnhqvbBV/q3Tg0kdN7FbRKJf95ypn3hdg7K8bwIDAQABAoIBAAWWGLK1DYa9vmPC QVLi23hDVwpvqN2hLDe066s2iSmcwdTBB4/R0ZRkn+pccnyTQrmq2UZUm1jv7zHb eL+yBMBBwXQbMRQs2Npv/eocdVrDi9KhLyLR8De392CRp/6/+K3yARgMR+nhU5YK QgnKYQSDXebstwj9OinBbDgo//EqZhnwBmCzEHgnZ4T+DS8+5ZNkp9OpmrGoqq/B LFnB+x548j4/y95QPrfLQNA8WaDwu8d8adw+qPV+9sFI1ZbjVm+/E0Z+5ppWN0JR yp6R07RLOp05bd3Cy6MnHlrhTWtcNvOXlxoDqj5s3b+Whw4MsNO6qW41+aQY0ATP P3NWkTkCgYEA/FvAAs8kFbNuuh2PuDd79JTq9xqs5ZgSLpYlm03d+FzxGUbcBrfd Py+5KAiZURBHKzpobfOKNFt2k8KDKaaAXe7+TVq5BHK9MjymmmI+9zMVmBxdhwnf u33nDOI7CClv3hGOGW6DUrRC2zn435/8Iigu4e5CMUEd0iSPujJQ27cCgYEAuvVq Cw8gl86b7IewIOI+NKEmas84KcvBNBCWjtrD4ToWmVEhIZxQabisDvu31n9T0CX+ 749uYwOl0MUCJw6m6VIqRo+xmFLTp9uambTWeV+4hjZO7F2K9Pk1JTEWjptA9Ie4 iiWKvjPwxoy95AbmzYPx7QO3xMXFxQk2DiPTFQkCgYB+t2N3BaRM8UiMVAOysMmh SpWhdteSggW/Ns2zaionaCP4WUhqZzDFZaVHoOm7dr0Fy9JcQ4oGOFcWYvmRlHWo tTUkioWU4jh2XVYa93I+lnwlYTjlcePSNaorIf4aXxQ5If+EbaWrhbB8fGOnhqII VL0V3ZmHOfdLaehxyooniQKBgG/d1JvVa10qZSX8cqjadvoqyr/ySdrIbkxm+I91 2urzRP5sCvT/gSYhN+KnP3L7MP1FHuvc2OIqFpd6qjUQkVLetSkPZeaM+NRhlHoQ OJzbZ5/28vZ/alv2mZQtcR/XSeCHLSaMHB5/GbzUDfNZJdUm9CUrqlP1OscRIeUI Do9xAoGBAMqvrhaOjB5gHdFSxD4v9XfA3JGdgA7DxELx1OgyuINxupI0j3Iv9GiY qudT18IelmeGqz7MfnB29+KV5G9LkgCcyhSY5Myp2/iPa5l/FizS3MPaw6VxQQd5 1cxrtF+VqL5ay7Qvjg2D3gH2LSces7o+rqtIi1s0g8+0tBThA8ld -----END RSA PRIVATE KEY-----'
-        // Obter a chave privada dos cookies
-        const privateKey = Cookies.get('private_key'); // Certifique-se de usar a chave correta
-        console.log('privateKey: ' + privateKey);
-        // Função para descriptografar uma mensagem
-        const decryptMessage = (encryptedMessage, privateKey) => {
-          try {
-            const privateKeyObj = forge.pki.privateKeyFromPem(privateKey);
-            const decodedContent = forge.util.decode64(encryptedMessage);
-            const decryptedMessage = privateKeyObj.decrypt(decodedContent, 'RSA-OAEP');
-            return decryptedMessage;
-          } catch (error) {
-            console.error('Error during decryption:', error.message);
-            return null;
-          }
-        };
-        
-        // Descriptografar as mensagens antes de defini-las no estado
-        const decryptedMessages = data.map((message) => {
-          const decryptedContent = decryptMessage(message.content, privateKey);
-          return { ...message, content: decryptedContent };
-        });
-    
-        setMessages(data);
-        setLoading(false);
-    
-        socket.emit('join chat', selectedChat._id);
-      } catch (error) {
-        toast({
-          title: 'Error Occurred!',
-          description: 'Failed to Load the Messages',
-          status: 'error',
-          duration: 5000,
-          isClosable: true,
-          position: 'bottom',
-        });
-      }
-    };
-    
+  const fetchMessages = async () => {
+    if (!selectedChat) return;
+    try {
+      const config = {
+        headers: {
+          Authorization: `Bearer ${user.token}`,
+        },
+      };
+
+      //setLoading(true);
+
+      localStorage.setItem(`${user.name}_private_key`, user.privateKey);
+      const userpk = localStorage.getItem(`${user.name}_private_key`);
+
+      const { data } = await axios.get(
+        `/api/message/${selectedChat._id}`,
+        config
+      );
+      setMessagesCrypted(data);
+
+      //obter data das mensagems cryptografadas
+      const response = await axios.get(
+        `/api/message/crypted/${selectedChat._id}`,
+        config
+      );
+      const crypdata = response.data;
+
+      // Função para descriptografar uma mensagem
+      const decryptMessage = (encryptedMessage, privateKey) => {
+        try {
+          const privateKeyObj = forge.pki.privateKeyFromPem(privateKey);
+          const decodedContent = forge.util.decode64(encryptedMessage);
+          const decryptedMessage = privateKeyObj.decrypt(
+            decodedContent,
+            "RSA-OAEP"
+          );
+          return decryptedMessage;
+        } catch (error) {
+          return null;
+        }
+      };
+
+      // Descriptografar as mensagens antes de defini-las no estado
+      const decryptedMessages = data.map((message) => {
+        const decryptedContent = decryptMessage(message.content, userpk);
+        return { ...message, content: decryptedContent };
+      });
+
+      setMessages(decryptedMessages);
+
+      // setLoading(false);
+
+      socket.emit("join chat", selectedChat._id, user.name);
+      return crypdata;
+    } catch (error) {
+      toast({
+        title: "Error Occurred!",
+        description: "Failed to Load the Messages",
+        status: "error",
+        duration: 5000,
+        isClosable: true,
+        position: "bottom",
+      });
+    }
+  };
 
   const sendMessage = async (event) => {
     if (event.key === "Enter" && newMessage) {
       socket.emit("stop typing", selectedChat._id);
+
       try {
         const config = {
           headers: {
@@ -115,11 +127,17 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
           },
           config
         );
-        socket.emit("new message", data);
-        setMessages([...messages, data]);
+
+        // Atualiza o estado local antes de chamar fetchMessages
+        setMessages([...messagesCrypted, data]);
+        // Chama fetchMessages para buscar mensagens atualizadas
+        const cryptdata = await fetchMessages();
+        console.log(cryptdata);
+        // Emitir evento para o servidor indicando que uma nova mensagem foi enviada
+        socket.emit("new message", selectedChat._id);
       } catch (error) {
         toast({
-          title: "Error Occured!",
+          title: "Error Occurred!",
           description: "Failed to send the Message",
           status: "error",
           duration: 5000,
@@ -142,26 +160,14 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
 
   useEffect(() => {
     fetchMessages();
+    socket.on("refresh messages", () => {
+      // Atualizar as mensagens quando receber o evento de nova mensagem
+      fetchMessages();
+    });
 
     selectedChatCompare = selectedChat;
     // eslint-disable-next-line
   }, [selectedChat]);
-
-  useEffect(() => {
-    socket.on("message recieved", (newMessageRecieved) => {
-      if (
-        !selectedChatCompare || // if chat is not selected or doesn't match current chat
-        selectedChatCompare._id !== newMessageRecieved.chat._id
-      ) {
-        if (!notification.includes(newMessageRecieved)) {
-          setNotification([newMessageRecieved, ...notification]);
-          setFetchAgain(!fetchAgain);
-        }
-      } else {
-        setMessages([...messages, newMessageRecieved]);
-      }
-    });
-  });
 
   const typingHandler = (e) => {
     setNewMessage(e.target.value);
@@ -243,7 +249,7 @@ const SingleChat = ({ fetchAgain, setFetchAgain }) => {
               />
             ) : (
               <div className="messages">
-                <ScrollableChat messages={messages} />
+                <ScrollableChat messages={messagesCrypted} />
               </div>
             )}
 
