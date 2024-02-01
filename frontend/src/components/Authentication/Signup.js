@@ -6,6 +6,7 @@ import { useToast } from "@chakra-ui/toast";
 import axios from "axios";
 import { useState } from "react";
 import { useHistory } from "react-router";
+const forge = require("node-forge");
 
 const Signup = () => {
   const [show, setShow] = useState(false);
@@ -15,6 +16,8 @@ const Signup = () => {
 
   const [name, setName] = useState();
   const [email, setEmail] = useState();
+  const [publicKey, setPublicKey] = useState();
+  const [privateKey, setPrivateKey] = useState();
   const [confirmpassword, setConfirmpassword] = useState();
   const [password, setPassword] = useState();
   const [pic, setPic] = useState();
@@ -45,6 +48,13 @@ const Signup = () => {
     }
     console.log(name, email, password, pic);
     try {
+      // Gera chaves públicas e privadas com Forge
+      const keyPair = forge.pki.rsa.generateKeyPair({ bits: 2048 });
+      const puKey = forge.pki.publicKeyToPem(keyPair.publicKey);
+      const priKey = forge.pki.privateKeyToPem(keyPair.privateKey);
+      setPublicKey(puKey);
+      setPrivateKey(priKey);
+
       const config = {
         headers: {
           "Content-type": "application/json",
@@ -57,9 +67,11 @@ const Signup = () => {
           email,
           password,
           pic,
+          public_key: publicKey,
         },
         config
       );
+
       console.log(data);
       toast({
         title: "Registration Successful",
@@ -68,7 +80,7 @@ const Signup = () => {
         isClosable: true,
         position: "bottom",
       });
-      localStorage.setItem("userInfo", JSON.stringify(data));
+      localStorage.setItem("userInfo", JSON.stringify(privateKey));
       setPicLoading(false);
       history.push("/chats");
     } catch (error) {

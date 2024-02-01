@@ -25,7 +25,7 @@ const allUsers = asyncHandler(async (req, res) => {
 //@route           POST /api/user/
 //@access          Public
 const registerUser = asyncHandler(async (req, res) => {
-  const { name, email, password, pic } = req.body;
+  const { name, email, password, pic, public_key } = req.body;
 
   if (!name || !email || !password) {
     res.status(400);
@@ -39,17 +39,17 @@ const registerUser = asyncHandler(async (req, res) => {
     throw new Error("User already exists");
   }
 
-  // Gera chaves públicas e privadas com Forge
-  const keyPair = forge.pki.rsa.generateKeyPair({ bits: 2048 });
-  const publicKey = forge.pki.publicKeyToPem(keyPair.publicKey);
-  const privateKey = forge.pki.privateKeyToPem(keyPair.privateKey);
+  // // Gera chaves públicas e privadas com Forge
+  // const keyPair = forge.pki.rsa.generateKeyPair({ bits: 2048 });
+  // const publicKey = forge.pki.publicKeyToPem(keyPair.publicKey);
+  // const privateKey = forge.pki.privateKeyToPem(keyPair.privateKey);
 
   const user = await User.create({
     name,
     email,
     password,
     pic,
-    public_key: publicKey,
+    public_key,
   });
 
   if (user) {
@@ -60,7 +60,6 @@ const registerUser = asyncHandler(async (req, res) => {
       isAdmin: user.isAdmin,
       pic: user.pic,
       token: generateToken(user._id),
-      privateKey,
     });
   } else {
     res.status(400);

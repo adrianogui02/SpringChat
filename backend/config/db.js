@@ -3,10 +3,13 @@ const colors = require("colors");
 
 const connectDB = async () => {
   try {
-    const conn = await mongoose.connect('mongodb+srv://admin:QkIGCwQFQsXmNgXD@walletapi.lsfvt4o.mongodb.net/CryptoChat', {
-      useNewUrlParser: true,
-      useUnifiedTopology: true,
-    });
+    const conn = await mongoose.connect(
+      "mongodb+srv://admin:qgj7eeuGfJFZ8c1a@walletapi.lsfvt4o.mongodb.net/CryptoChat",
+      {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+      }
+    );
 
     console.log(`MongoDB Connected: ${conn.connection.host}`.cyan.underline);
   } catch (error) {
@@ -16,4 +19,3 @@ const connectDB = async () => {
 };
 
 module.exports = connectDB;
-
